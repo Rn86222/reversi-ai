@@ -205,6 +205,7 @@ fn nega_alpha_transpose(
 }
 
 pub fn nega_alpha_transpose_pos(board: &Board, depth: i32) -> u64 {
+    let start_time = Instant::now();
     let mut transpose_table: HashMap<Board, i32> = HashMap::new();
     let mut former_transpose_table: HashMap<Board, i32> = HashMap::new();
     let legal_poss_vec = legal_poss(board);
@@ -220,10 +221,14 @@ pub fn nega_alpha_transpose_pos(board: &Board, depth: i32) -> u64 {
         child_boards.push(child_board);
     }
     best_pos = legal_poss_vec[0];
-    let start_depth = if 1 < depth - 3 { depth - 3 } else { 1 };
+    let start_depth = if 1 < depth - 5 { depth - 5 } else { 1 };
     let mut searched_nodes = 0;
     let mut best_score = 0;
     for search_depth in start_depth..=depth {
+        if start_time.elapsed() >= Duration::from_millis(500) {
+            println!("score: {}", best_score);
+            return best_pos;
+        }
         let mut alpha = std::i32::MIN + 1;
         let beta = -alpha;
         if legal_poss_vec.len() >= 2 {
@@ -549,6 +554,7 @@ pub fn nega_scout_transpose_pos(
     depth: i32,
     // transpose_table_upper: &mut HashMap<Board, i32>,s
 ) -> u64 {
+    let start_time = Instant::now();
     let mut transpose_table_upper: HashMap<Board, i32> = HashMap::new();
     let mut former_transpose_table_upper: HashMap<Board, i32> = HashMap::new();
     let mut transpose_table_lower: HashMap<Board, i32> = HashMap::new();
@@ -569,6 +575,10 @@ pub fn nega_scout_transpose_pos(
     let mut searched_nodes = 0;
     let mut best_score = 0;
     for search_depth in start_depth..=depth {
+        if start_time.elapsed() >= Duration::from_millis(800) {
+            println!("score: {}", best_score);
+            return best_pos;
+        }
         let mut alpha = std::i32::MIN + 1;
         let beta = -alpha;
         if legal_poss_vec.len() >= 2 {
