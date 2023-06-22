@@ -1,1 +1,0 @@
-/home/light/rust/reversi-ai/target/debug/othello: /home/light/rust/reversi-ai/src/ai/ai.rs /home/light/rust/reversi-ai/src/ai.rs /home/light/rust/reversi-ai/src/main.rs /home/light/rust/reversi-ai/src/reversi/reversi.rs /home/light/rust/reversi-ai/src/reversi.rs /home/light/rust/reversi-ai/src/util/util.rs /home/light/rust/reversi-ai/src/util.rs
