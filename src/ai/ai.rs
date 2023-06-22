@@ -32,13 +32,14 @@ fn evaluate_board(board: &Board) -> i32 {
     }
 }
 
-pub fn random_pos(board: &Board, rng: &mut ThreadRng) -> u64 {
+pub fn random_pos(board: &Board) -> u64 {
     let legal_poss_vec: Vec<u64> = legal_poss(&board);
     let len = legal_poss_vec.len();
+    let mut rng = rand::thread_rng();
     if len == 0 {
         0
     } else {
-        let random_index = (*rng).gen_range(0..len);
+        let random_index = rng.gen_range(0..len);
         legal_poss_vec[random_index]
     }
 }
@@ -90,7 +91,7 @@ fn alpha_beta(
     for i in choices {
         let mut new_board = *board;
         let pos = legal_poss_vec[i];
-        new_board = execute_cmd(&mut new_board, pos_to_cmd(&pos));
+        new_board = execute_pos(&mut new_board, pos);
         let (count, mut score) = alpha_beta(&mut new_board, rng, -beta, -alpha, depth - 1);
         count_sum += count;
         score = -score;
@@ -104,22 +105,28 @@ fn alpha_beta(
     (count_sum, alpha)
 }
 
-pub fn alpha_beta_pos(board: &Board, rng: &mut ThreadRng, depth: i32) -> u64 {
+pub fn alpha_beta_pos(board: &Board, depth: i32) -> u64 {
     let legal_poss_vec = legal_poss(board);
     let mut best_pos;
     let mut alpha = std::i32::MIN + 1;
     if legal_poss_vec.len() == 0 {
         return 0;
     }
+    let mut rng = rand::thread_rng();
     let mut choices: Vec<usize> = (0..legal_poss_vec.len()).collect();
-    choices.shuffle(rng);
+    choices.shuffle(&mut rng);
     best_pos = legal_poss_vec[0];
     let mut count_sum = 0;
     for i in choices {
         let mut new_board = *board;
-        new_board = execute_cmd(&mut new_board, pos_to_cmd(&legal_poss_vec[i]));
-        let (count, mut score) =
-            alpha_beta(&mut new_board, rng, std::i32::MIN + 1, -alpha, depth - 1);
+        new_board = execute_pos(&mut new_board, legal_poss_vec[i]);
+        let (count, mut score) = alpha_beta(
+            &mut new_board,
+            &mut rng,
+            std::i32::MIN + 1,
+            -alpha,
+            depth - 1,
+        );
         count_sum += count;
         score = -score;
         if score >= MAX_SCORE {
@@ -132,7 +139,7 @@ pub fn alpha_beta_pos(board: &Board, rng: &mut ThreadRng, depth: i32) -> u64 {
         }
     }
     println!(
-        "{} {} searched: {}",
+        "score: {} {}  searched: {}",
         alpha,
         pos_to_cmd(&best_pos),
         count_sum
@@ -173,7 +180,7 @@ fn nega_alpha_transpose(
     let mut child_boards: Vec<Board> = Vec::new();
     for i in 0..legal_poss_vec.len() {
         let mut child_board = *board;
-        child_board = execute_cmd(&mut child_board, pos_to_cmd(&legal_poss_vec[i]));
+        child_board = execute_pos(&mut child_board, legal_poss_vec[i]);
         child_boards.push(child_board);
     }
     child_boards.sort_by(|a, b| b.value.cmp(&a.value));
@@ -195,14 +202,9 @@ fn nega_alpha_transpose(
     (searched_nodes, alpha)
 }
 
-pub fn nega_alpha_transpose_pos(
-    board: &Board,
-    depth: i32,
-    transpose_table: &mut HashMap<Board, i32>,
-    former_transpose_table: &mut HashMap<Board, i32>,
-) -> u64 {
-    transpose_table.clear();
-    former_transpose_table.clear();
+pub fn nega_alpha_transpose_pos(board: &Board, depth: i32) -> u64 {
+    let mut transpose_table: HashMap<Board, i32> = HashMap::new();
+    let mut former_transpose_table: HashMap<Board, i32> = HashMap::new();
     let legal_poss_vec = legal_poss(board);
     let mut best_pos;
     if legal_poss_vec.len() == 0 {
@@ -211,7 +213,7 @@ pub fn nega_alpha_transpose_pos(
     let mut child_boards: Vec<Board> = Vec::new();
     for i in 0..legal_poss_vec.len() {
         let mut child_board = *board;
-        child_board = execute_cmd(&mut child_board, pos_to_cmd(&legal_poss_vec[i]));
+        child_board = execute_pos(&mut child_board, legal_poss_vec[i]);
         child_board.before_pos = legal_poss_vec[i];
         child_boards.push(child_board);
     }
@@ -227,15 +229,20 @@ pub fn nega_alpha_transpose_pos(
                 .iter()
                 .map(|b: &Board| {
                     let mut new_b: Board = *b;
-                    new_b.value = calc_move_ordering_value(&new_b, former_transpose_table);
+                    new_b.value = calc_move_ordering_value(&new_b, &mut former_transpose_table);
                     new_b
                 })
                 .collect();
             child_boards.sort_by(|a, b| b.value.cmp(&a.value));
         }
         for mut child in child_boards.clone() {
-            let (count, mut score) =
-                nega_alpha_transpose(&mut child, search_depth - 1, -beta, -alpha, transpose_table);
+            let (count, mut score) = nega_alpha_transpose(
+                &mut child,
+                search_depth - 1,
+                -beta,
+                -alpha,
+                &mut transpose_table,
+            );
             score = -score;
             searched_nodes += count;
             if score >= MAX_SCORE {
@@ -254,10 +261,10 @@ pub fn nega_alpha_transpose_pos(
             pos_to_cmd(&best_pos),
             searched_nodes
         );
-        *former_transpose_table = (*transpose_table).clone();
+        former_transpose_table = transpose_table.clone();
         transpose_table.clear();
     }
-    println!("{}", best_score);
+    println!("score: {}", best_score);
     best_pos
 }
 
@@ -329,7 +336,7 @@ fn nega_scout_transpose(
     let mut child_boards: Vec<Board> = Vec::new();
     for i in 0..legal_poss_vec.len() {
         let mut child_board = *board;
-        child_board = execute_cmd(&mut child_board, pos_to_cmd(&legal_poss_vec[i]));
+        child_board = execute_pos(&mut child_board, legal_poss_vec[i]);
         child_boards.push(child_board);
     }
     if legal_poss_vec.len() >= 2 {
@@ -437,7 +444,7 @@ fn nega_scout(
     let mut child_boards: Vec<Board> = Vec::new();
     for i in 0..legal_poss_vec.len() {
         let mut child_board = *board;
-        child_board = execute_cmd(&mut child_board, pos_to_cmd(&legal_poss_vec[i]));
+        child_board = execute_pos(&mut child_board, legal_poss_vec[i]);
         child_boards.push(child_board);
     }
     if legal_poss_vec.len() >= 2 {
@@ -538,15 +545,12 @@ fn nega_scout(
 pub fn nega_scout_transpose_pos(
     board: &Board,
     depth: i32,
-    transpose_table_upper: &mut HashMap<Board, i32>,
-    transpose_table_lower: &mut HashMap<Board, i32>,
-    former_transpose_table_upper: &mut HashMap<Board, i32>,
-    former_transpose_table_lower: &mut HashMap<Board, i32>,
+    // transpose_table_upper: &mut HashMap<Board, i32>,s
 ) -> u64 {
-    transpose_table_upper.clear();
-    transpose_table_lower.clear();
-    former_transpose_table_upper.clear();
-    former_transpose_table_lower.clear();
+    let mut transpose_table_upper: HashMap<Board, i32> = HashMap::new();
+    let mut former_transpose_table_upper: HashMap<Board, i32> = HashMap::new();
+    let mut transpose_table_lower: HashMap<Board, i32> = HashMap::new();
+    let mut former_transpose_table_lower: HashMap<Board, i32> = HashMap::new();
     let legal_poss_vec = legal_poss(board);
     if legal_poss_vec.len() == 0 {
         return 0;
@@ -554,7 +558,7 @@ pub fn nega_scout_transpose_pos(
     let mut child_boards: Vec<Board> = Vec::new();
     for i in 0..legal_poss_vec.len() {
         let mut child_board = *board;
-        child_board = execute_cmd(&mut child_board, pos_to_cmd(&legal_poss_vec[i]));
+        child_board = execute_pos(&mut child_board, legal_poss_vec[i]);
         child_board.before_pos = legal_poss_vec[i];
         child_boards.push(child_board);
     }
@@ -572,8 +576,8 @@ pub fn nega_scout_transpose_pos(
                     let mut new_b: Board = *b;
                     new_b.value = calc_move_ordering_value_nega_scout(
                         &new_b,
-                        former_transpose_table_upper,
-                        former_transpose_table_lower,
+                        &mut former_transpose_table_upper,
+                        &mut former_transpose_table_lower,
                     );
                     new_b
                 })
@@ -586,10 +590,10 @@ pub fn nega_scout_transpose_pos(
             search_depth - 1,
             -beta,
             -alpha,
-            transpose_table_upper,
-            transpose_table_lower,
-            former_transpose_table_upper,
-            former_transpose_table_lower,
+            &mut transpose_table_upper,
+            &mut transpose_table_lower,
+            &mut former_transpose_table_upper,
+            &mut former_transpose_table_lower,
         );
         score = -score;
         searched_nodes += count;
@@ -606,10 +610,10 @@ pub fn nega_scout_transpose_pos(
                 search_depth - 1,
                 -alpha - 1,
                 -alpha,
-                transpose_table_upper,
-                transpose_table_lower,
-                former_transpose_table_upper,
-                former_transpose_table_lower,
+                &mut transpose_table_upper,
+                &mut transpose_table_lower,
+                &mut former_transpose_table_upper,
+                &mut former_transpose_table_lower,
             );
             score = -score;
             searched_nodes += count;
@@ -626,10 +630,10 @@ pub fn nega_scout_transpose_pos(
                     search_depth - 1,
                     -beta,
                     -alpha,
-                    transpose_table_upper,
-                    transpose_table_lower,
-                    former_transpose_table_upper,
-                    former_transpose_table_lower,
+                    &mut transpose_table_upper,
+                    &mut transpose_table_lower,
+                    &mut former_transpose_table_upper,
+                    &mut former_transpose_table_lower,
                 );
                 score = -score;
             }
@@ -644,11 +648,25 @@ pub fn nega_scout_transpose_pos(
             pos_to_cmd(&best_pos),
             searched_nodes
         );
-        *former_transpose_table_upper = (*transpose_table_upper).clone();
-        *former_transpose_table_lower = (*transpose_table_lower).clone();
+        former_transpose_table_upper = transpose_table_upper.clone();
+        former_transpose_table_lower = transpose_table_lower.clone();
         transpose_table_upper.clear();
         transpose_table_lower.clear();
     }
-    println!("{}", best_score);
+    println!("score: {}", best_score);
     best_pos
+}
+
+pub fn ai_pos(board: &mut Board, depth: i32, ai_name: String) -> u64 {
+    let pos;
+    if ai_name == "rn" {
+        pos = random_pos(&board);
+    } else if ai_name == "ab" {
+        pos = alpha_beta_pos(&board, depth);
+    } else if ai_name == "na" {
+        pos = nega_alpha_transpose_pos(&board, depth);
+    } else {
+        pos = nega_scout_transpose_pos(&board, depth);
+    }
+    pos
 }

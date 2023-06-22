@@ -108,21 +108,18 @@ pub fn print_board(board: &Board) {
     );
 }
 
-pub fn execute_cmd(board: &mut Board, cmd: String) -> Board {
-    let pos = cmd_to_pos(cmd);
-    if pos == 0 || !is_legal_pos(board, &pos) {
-        println!("illegal cmd");
-        return *board;
-    }
-    if board.turn {
-        board.black_board |= pos;
+pub fn board_state(board: &Board) -> i32 {
+    let black_num = board.black_board.count_ones();
+    let white_num = board.white_board.count_ones();
+    if black_num + white_num < CELL * CELL && board.no_legal_command < 2 {
+        0
+    } else if black_num > white_num {
+        1
+    } else if black_num < white_num {
+        2
     } else {
-        board.white_board |= pos;
+        3
     }
-    board.no_legal_command = 0;
-    let mut new_board = flip(board, &pos);
-    new_board.turn = !new_board.turn;
-    new_board
 }
 
 fn is_my_stone(board: &Board, pos: &u64) -> bool {
@@ -255,16 +252,22 @@ fn flip(board: &mut Board, pos: &u64) -> Board {
     *new_board
 }
 
-pub fn board_state(board: &Board) -> i32 {
-    let black_num = board.black_board.count_ones();
-    let white_num = board.white_board.count_ones();
-    if black_num + white_num < CELL * CELL && board.no_legal_command < 2 {
-        0
-    } else if black_num > white_num {
-        1
-    } else if black_num < white_num {
-        2
-    } else {
-        3
+pub fn execute_cmd(board: &mut Board, cmd: String) -> Board {
+    execute_pos(board, cmd_to_pos(cmd))
+}
+
+pub fn execute_pos(board: &mut Board, pos: u64) -> Board {
+    if pos == 0 || !is_legal_pos(board, &pos) {
+        println!("illegal cmd");
+        return *board;
     }
+    if board.turn {
+        board.black_board |= pos;
+    } else {
+        board.white_board |= pos;
+    }
+    board.no_legal_command = 0;
+    let mut new_board = flip(board, &pos);
+    new_board.turn = !new_board.turn;
+    new_board
 }

@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::env;
 use std::io;
 mod ai;
@@ -9,13 +8,6 @@ use reversi::reversi::*;
 use util::util::*;
 
 fn main() {
-    let mut transpose_table: HashMap<Board, i32> = HashMap::new();
-    let mut former_transpose_table: HashMap<Board, i32> = HashMap::new();
-    let mut transpose_table_upper: HashMap<Board, i32> = HashMap::new();
-    let mut former_transpose_table_upper: HashMap<Board, i32> = HashMap::new();
-    let mut transpose_table_lower: HashMap<Board, i32> = HashMap::new();
-    let mut former_transpose_table_lower: HashMap<Board, i32> = HashMap::new();
-
     let mut board: Board = Board {
         black_board: 0,
         white_board: 0,
@@ -27,72 +19,33 @@ fn main() {
 
     init_board(&mut board);
     print_board(&board);
-    let mut rng = rand::thread_rng();
 
     let player_turn;
 
     let args: Vec<String> = env::args().collect();
 
+    let depth = 7;
+
     if args.len() == 3 {
         while board_state(&board) == 0 {
             if board.turn {
-                let pos;
-                if args[1] == "rn" {
-                    pos = random_pos(&board, &mut rng);
-                } else if args[1] == "ab" {
-                    pos = alpha_beta_pos(&board, &mut rng, 7);
-                } else if args[1] == "na" {
-                    pos = nega_alpha_transpose_pos(
-                        &board,
-                        7,
-                        &mut transpose_table,
-                        &mut former_transpose_table,
-                    );
-                } else {
-                    pos = nega_scout_transpose_pos(
-                        &board,
-                        8,
-                        &mut transpose_table_upper,
-                        &mut transpose_table_lower,
-                        &mut former_transpose_table_upper,
-                        &mut former_transpose_table_lower,
-                    );
-                }
+                let pos = ai_pos(&mut board, depth, args[1].clone());
                 if pos == 0 {
                     board.no_legal_command += 1;
                     println!("no legal command, skip");
                     board.turn = !board.turn;
                 } else {
+                    println!("{}", pos_to_cmd(&pos));
                     board = execute_cmd(&mut board, pos_to_cmd(&pos));
                 }
             } else {
-                let pos;
-                if args[2] == "rn" {
-                    pos = random_pos(&board, &mut rng);
-                } else if args[2] == "ab" {
-                    pos = alpha_beta_pos(&board, &mut rng, 7);
-                } else if args[2] == "na" {
-                    pos = nega_alpha_transpose_pos(
-                        &board,
-                        7,
-                        &mut transpose_table,
-                        &mut former_transpose_table,
-                    );
-                } else {
-                    pos = nega_scout_transpose_pos(
-                        &board,
-                        7,
-                        &mut transpose_table_upper,
-                        &mut transpose_table_lower,
-                        &mut former_transpose_table_upper,
-                        &mut former_transpose_table_lower,
-                    );
-                }
+                let pos = ai_pos(&mut board, depth, args[2].clone());
                 if pos == 0 {
                     board.no_legal_command += 1;
                     println!("no legal command, skip");
                     board.turn = !board.turn;
                 } else {
+                    println!("{}", pos_to_cmd(&pos));
                     board = execute_cmd(&mut board, pos_to_cmd(&pos));
                 }
             }
@@ -132,33 +85,13 @@ fn main() {
                     }
                 }
             } else {
-                let pos;
-                if args[1] == "rn" {
-                    pos = random_pos(&board, &mut rng);
-                } else if args[1] == "ab" {
-                    pos = alpha_beta_pos(&board, &mut rng, 7);
-                } else if args[1] == "na" {
-                    pos = nega_alpha_transpose_pos(
-                        &board,
-                        7,
-                        &mut transpose_table,
-                        &mut former_transpose_table,
-                    );
-                } else {
-                    pos = nega_scout_transpose_pos(
-                        &board,
-                        10,
-                        &mut transpose_table_upper,
-                        &mut transpose_table_lower,
-                        &mut former_transpose_table_upper,
-                        &mut former_transpose_table_lower,
-                    );
-                }
+                let pos = ai_pos(&mut board, depth, args[1].clone());
                 if pos == 0 {
                     board.no_legal_command += 1;
                     println!("no legal command, skip");
                     board.turn = !board.turn;
                 } else {
+                    println!("{}", pos_to_cmd(&pos));
                     board = execute_cmd(&mut board, pos_to_cmd(&pos));
                 }
             }
