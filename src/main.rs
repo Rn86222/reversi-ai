@@ -5,6 +5,8 @@ mod reversi;
 mod util;
 use ai::ai::*;
 use reversi::reversi::*;
+use std::time::Duration;
+use std::time::Instant;
 use util::util::*;
 
 fn main() {
@@ -26,25 +28,30 @@ fn main() {
 
     let depth = 7;
 
+    let mut black_duration_sum = Duration::from_secs(0);
+    let mut white_duration_sum = Duration::from_secs(0);
+
     if args.len() == 3 {
         while board_state(&board) == 0 {
             if board.turn {
-                let pos = ai_pos(&mut board, depth, args[1].clone());
+                let (pos, duration) = ai_pos(&mut board, depth, args[1].clone());
                 if pos == 0 {
                     board.no_legal_command += 1;
                     println!("no legal command, skip");
                     board.turn = !board.turn;
                 } else {
+                    black_duration_sum += duration;
                     println!("{}", pos_to_cmd(&pos));
                     board = execute_cmd(&mut board, pos_to_cmd(&pos));
                 }
             } else {
-                let pos = ai_pos(&mut board, 9, args[2].clone());
+                let (pos, duration) = ai_pos(&mut board, 9, args[2].clone());
                 if pos == 0 {
                     board.no_legal_command += 1;
                     println!("no legal command, skip");
                     board.turn = !board.turn;
                 } else {
+                    white_duration_sum += duration;
                     println!("{}", pos_to_cmd(&pos));
                     board = execute_cmd(&mut board, pos_to_cmd(&pos));
                 }
@@ -63,6 +70,7 @@ fn main() {
         player_turn = if args[2] == "s" { BLACK } else { WHITE };
         while board_state(&board) == 0 {
             if board.turn == player_turn {
+                let start_time = Instant::now();
                 if legal_poss(&board).len() == 0 {
                     board.no_legal_command += 1;
                     println!("no legal command, skip");
@@ -78,6 +86,12 @@ fn main() {
                         continue;
                     }
                     if is_legal_pos(&board, &pos) {
+                        let duration = start_time.elapsed();
+                        if player_turn {
+                            black_duration_sum += duration;
+                        } else {
+                            white_duration_sum += duration;
+                        }
                         board = execute_cmd(&mut board, pos_to_cmd(&pos));
                     } else {
                         println!("illegal command");
@@ -85,12 +99,17 @@ fn main() {
                     }
                 }
             } else {
-                let pos = ai_pos(&mut board, depth, args[1].clone());
+                let (pos, duration) = ai_pos(&mut board, depth, args[1].clone());
                 if pos == 0 {
                     board.no_legal_command += 1;
                     println!("no legal command, skip");
                     board.turn = !board.turn;
                 } else {
+                    if player_turn {
+                        white_duration_sum += duration;
+                    } else {
+                        black_duration_sum += duration;
+                    }
                     println!("{}", pos_to_cmd(&pos));
                     board = execute_cmd(&mut board, pos_to_cmd(&pos));
                 }
@@ -112,4 +131,8 @@ fn main() {
     } else {
         println!("draw");
     }
+    println!(
+        "Usage time  {}: {:.2?}  {}: {:.2?}",
+        BLACK_STONE, black_duration_sum, WHITE_STONE, white_duration_sum
+    );
 }

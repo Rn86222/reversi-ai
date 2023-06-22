@@ -4,6 +4,7 @@ use rand::seq::SliceRandom;
 use rand::{rngs::ThreadRng, Rng};
 use std::collections::HashMap;
 use std::option::Option;
+use std::time::Duration;
 use std::time::Instant;
 
 const MAX_SCORE: i32 = 10000;
@@ -658,7 +659,7 @@ pub fn nega_scout_transpose_pos(
     best_pos
 }
 
-pub fn ai_pos(board: &mut Board, depth: i32, ai_name: String) -> u64 {
+pub fn ai_pos(board: &mut Board, depth: i32, ai_name: String) -> (u64, Duration) {
     let pos;
     let start_time = Instant::now();
     if ai_name == "rn" {
@@ -672,5 +673,5 @@ pub fn ai_pos(board: &mut Board, depth: i32, ai_name: String) -> u64 {
     }
     let duration = start_time.elapsed();
     println!("Thinking time: {:.2?}", duration);
-    pos
+    (pos, duration)
 }
