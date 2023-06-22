@@ -1,7 +1,7 @@
 use crate::util::util::*;
 use std::hash::{Hash, Hasher};
 pub const BLACK: bool = true;
-// const WHITE: bool = false;
+pub const WHITE: bool = false;
 pub const BLACK_STONE: &str = "\x1b[31mo\x1b[0m";
 pub const WHITE_STONE: &str = "\x1b[34mx\x1b[0m";
 pub const CELL: u32 = 8;

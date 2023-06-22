@@ -71,34 +71,11 @@ fn alpha_beta(
     beta: i32,
     depth: i32,
 ) -> (i32, i32) {
-    let state = board_state(board);
-    if state == 1 {
-        if board.turn {
-            println!("depth: {}  state == 1 black", depth);
-            print_board(board);
-            return (1, MAX_SCORE);
-        } else {
-            println!("state == 1 white");
-            return (1, -MAX_SCORE);
-        }
-    } else if state == 2 {
-        if board.turn {
-            println!("state == 2 black");
-            return (1, -MAX_SCORE);
-        } else {
-            println!("state == 2 white");
-            return (1, MAX_SCORE);
-        }
-    } else if state == 3 {
-        return (1, 0);
+    if let Some((count, score)) = check_end_score(board) {
+        return (count, score);
     } else if depth <= 0 {
         return (1, evaluate_board(board));
     }
-    // if let Some((count, score)) = check_end_score(board) {
-    //     return (count, score);
-    // } else if depth <= 0 {
-    //     return (1, evaluate_board(board));
-    // }
     let legal_poss_vec = legal_poss(board);
     if legal_poss_vec.len() == 0 {
         board.turn = !board.turn;
@@ -113,7 +90,7 @@ fn alpha_beta(
     for i in choices {
         let mut new_board = *board;
         let pos = legal_poss_vec[i];
-        execute_cmd(&mut new_board, pos_to_cmd(&pos));
+        new_board = execute_cmd(&mut new_board, pos_to_cmd(&pos));
         let (count, mut score) = alpha_beta(&mut new_board, rng, -beta, -alpha, depth - 1);
         count_sum += count;
         score = -score;
@@ -141,11 +118,12 @@ pub fn alpha_beta_pos(board: &Board, rng: &mut ThreadRng, depth: i32) -> u64 {
     for i in choices {
         let mut new_board = *board;
         new_board = execute_cmd(&mut new_board, pos_to_cmd(&legal_poss_vec[i]));
-        let (count, mut score) = alpha_beta(&mut new_board, rng, std::i32::MIN + 1, -alpha, depth);
+        let (count, mut score) =
+            alpha_beta(&mut new_board, rng, std::i32::MIN + 1, -alpha, depth - 1);
         count_sum += count;
         score = -score;
         if score >= MAX_SCORE {
-            println!("score: {} complete", score);
+            println!("complete");
             return legal_poss_vec[i];
         }
         if score > alpha {
@@ -178,21 +156,8 @@ fn nega_alpha_transpose(
     beta: i32,
     transpose_table: &mut HashMap<Board, i32>,
 ) -> (i32, i32) {
-    let state = board_state(board);
-    if state == 1 {
-        if board.turn {
-            return (1, MAX_SCORE);
-        } else {
-            return (1, -MAX_SCORE);
-        }
-    } else if state == 2 {
-        if board.turn {
-            return (1, -MAX_SCORE);
-        } else {
-            return (1, MAX_SCORE);
-        }
-    } else if state == 3 {
-        return (1, 0);
+    if let Some((count, score)) = check_end_score(board) {
+        return (count, score);
     } else if depth <= 0 {
         return (1, evaluate_board(board));
     } else if let Some(v) = transpose_table.get(board) {
@@ -321,21 +286,8 @@ fn nega_scout_transpose(
     former_transpose_table_upper: &mut HashMap<Board, i32>,
     former_transpose_table_lower: &mut HashMap<Board, i32>,
 ) -> (i32, i32) {
-    let state = board_state(board);
-    if state == 1 {
-        if board.turn {
-            return (1, MAX_SCORE);
-        } else {
-            return (1, -MAX_SCORE);
-        }
-    } else if state == 2 {
-        if board.turn {
-            return (1, -MAX_SCORE);
-        } else {
-            return (1, MAX_SCORE);
-        }
-    } else if state == 3 {
-        return (1, 0);
+    if let Some((count, score)) = check_end_score(board) {
+        return (count, score);
     } else if depth <= 0 {
         return (1, evaluate_board(board));
     }
@@ -442,21 +394,8 @@ fn nega_scout(
     former_transpose_table_upper: &mut HashMap<Board, i32>,
     former_transpose_table_lower: &mut HashMap<Board, i32>,
 ) -> (i32, i32) {
-    let state = board_state(board);
-    if state == 1 {
-        if board.turn {
-            return (1, MAX_SCORE);
-        } else {
-            return (1, -MAX_SCORE);
-        }
-    } else if state == 2 {
-        if board.turn {
-            return (1, -MAX_SCORE);
-        } else {
-            return (1, MAX_SCORE);
-        }
-    } else if state == 3 {
-        return (1, 0);
+    if let Some((count, score)) = check_end_score(board) {
+        return (count, score);
     } else if depth <= 0 {
         return (1, evaluate_board(board));
     }

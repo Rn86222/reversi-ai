@@ -28,29 +28,35 @@ fn main() {
     print_board(&board);
     let mut rng = rand::thread_rng();
 
-    let player_turn = BLACK;
+    let player_turn;
 
     let args: Vec<String> = env::args().collect();
 
-    if args.len() > 1 && args[1] == "0" {
+    if args.len() == 3 {
         while board_state(&board) == 0 {
-            if board.turn == player_turn {
-                let pos = random_pos(&board, &mut rng);
-                // let pos = alpha_beta_pos(&board, &mut rng, 7);
-                // let pos = nega_alpha_transpose_pos(
-                //     &board,
-                //     7,
-                //     &mut transpose_table,
-                //     &mut former_transpose_table,
-                // );
-                // let pos = nega_scout_transpose_pos(
-                //     &board,
-                //     8,
-                //     &mut transpose_table_upper,
-                //     &mut transpose_table_lower,
-                //     &mut former_transpose_table_upper,
-                //     &mut former_transpose_table_lower,
-                // );
+            if board.turn {
+                let pos;
+                if args[1] == "rn" {
+                    pos = random_pos(&board, &mut rng);
+                } else if args[1] == "ab" {
+                    pos = alpha_beta_pos(&board, &mut rng, 7);
+                } else if args[1] == "na" {
+                    pos = nega_alpha_transpose_pos(
+                        &board,
+                        7,
+                        &mut transpose_table,
+                        &mut former_transpose_table,
+                    );
+                } else {
+                    pos = nega_scout_transpose_pos(
+                        &board,
+                        8,
+                        &mut transpose_table_upper,
+                        &mut transpose_table_lower,
+                        &mut former_transpose_table_upper,
+                        &mut former_transpose_table_lower,
+                    );
+                }
                 if pos == 0 {
                     board.no_legal_command += 1;
                     println!("no legal command, skip");
@@ -59,22 +65,28 @@ fn main() {
                     board = execute_cmd(&mut board, pos_to_cmd(&pos));
                 }
             } else {
-                // let pos = random_pos(&board, &mut rng);
-                let pos = alpha_beta_pos(&board, &mut rng, 7);
-                // let pos = nega_alpha_transpose_pos(
-                //     &board,
-                //     7,
-                //     &mut transpose_table,
-                //     &mut former_transpose_table,
-                // );
-                // let pos = nega_scout_transpose_pos(
-                //     &board,
-                //     8,
-                //     &mut transpose_table_upper,
-                //     &mut transpose_table_lower,
-                //     &mut former_transpose_table_upper,
-                //     &mut former_transpose_table_lower,
-                // );
+                let pos;
+                if args[2] == "rn" {
+                    pos = random_pos(&board, &mut rng);
+                } else if args[2] == "ab" {
+                    pos = alpha_beta_pos(&board, &mut rng, 7);
+                } else if args[2] == "na" {
+                    pos = nega_alpha_transpose_pos(
+                        &board,
+                        7,
+                        &mut transpose_table,
+                        &mut former_transpose_table,
+                    );
+                } else {
+                    pos = nega_scout_transpose_pos(
+                        &board,
+                        7,
+                        &mut transpose_table_upper,
+                        &mut transpose_table_lower,
+                        &mut former_transpose_table_upper,
+                        &mut former_transpose_table_lower,
+                    );
+                }
                 if pos == 0 {
                     board.no_legal_command += 1;
                     println!("no legal command, skip");
@@ -93,6 +105,8 @@ fn main() {
             );
         }
     } else {
+        assert_eq!(args.len(), 4);
+        player_turn = if args[2] == "s" { BLACK } else { WHITE };
         while board_state(&board) == 0 {
             if board.turn == player_turn {
                 if legal_poss(&board).len() == 0 {
@@ -117,22 +131,28 @@ fn main() {
                     }
                 }
             } else {
-                // let pos = random_pos(&board, &mut rng);
-                let pos = alpha_beta_pos(&board, &mut rng, 7);
-                // let pos = nega_alpha_transpose_pos(
-                //     &board,
-                //     7,
-                //     &mut transpose_table,
-                //     &mut former_transpose_table,
-                // );
-                // let pos = nega_scout_transpose_pos(
-                //     &board,
-                //     9,
-                //     &mut transpose_table_upper,
-                //     &mut transpose_table_lower,
-                //     &mut former_transpose_table_upper,
-                //     &mut former_transpose_table_lower,
-                // );
+                let pos;
+                if args[1] == "rn" {
+                    pos = random_pos(&board, &mut rng);
+                } else if args[1] == "ab" {
+                    pos = alpha_beta_pos(&board, &mut rng, 7);
+                } else if args[1] == "na" {
+                    pos = nega_alpha_transpose_pos(
+                        &board,
+                        7,
+                        &mut transpose_table,
+                        &mut former_transpose_table,
+                    );
+                } else {
+                    pos = nega_scout_transpose_pos(
+                        &board,
+                        8,
+                        &mut transpose_table_upper,
+                        &mut transpose_table_lower,
+                        &mut former_transpose_table_upper,
+                        &mut former_transpose_table_lower,
+                    );
+                }
                 if pos == 0 {
                     board.no_legal_command += 1;
                     println!("no legal command, skip");
