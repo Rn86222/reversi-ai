@@ -39,7 +39,7 @@ fn main() {
                     board = execute_cmd(&mut board, pos_to_cmd(&pos));
                 }
             } else {
-                let pos = ai_pos(&mut board, depth, args[2].clone());
+                let pos = ai_pos(&mut board, 9, args[2].clone());
                 if pos == 0 {
                     board.no_legal_command += 1;
                     println!("no legal command, skip");
