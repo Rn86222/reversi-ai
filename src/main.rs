@@ -15,6 +15,7 @@ fn main() {
     let mut former_transpose_table_upper: HashMap<Board, i32> = HashMap::new();
     let mut transpose_table_lower: HashMap<Board, i32> = HashMap::new();
     let mut former_transpose_table_lower: HashMap<Board, i32> = HashMap::new();
+
     let mut board: Board = Board {
         black_board: 0,
         white_board: 0,
