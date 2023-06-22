@@ -183,7 +183,7 @@ pub fn is_legal_pos(board: &Board, pos: &u64) -> bool {
     }
     for dir in DIRECTIONS.iter() {
         let mut current_pos: u64 = *pos;
-        loop {
+        'outer: loop {
             current_pos = new_pos(&current_pos, dir);
             if current_pos == 0 || is_my_stone(board, &current_pos) || is_empty(board, &current_pos)
             {
@@ -192,7 +192,7 @@ pub fn is_legal_pos(board: &Board, pos: &u64) -> bool {
             loop {
                 current_pos = new_pos(&current_pos, dir);
                 if current_pos == 0 || is_empty(board, &current_pos) {
-                    break;
+                    break 'outer;
                 }
                 if is_my_stone(board, &current_pos) {
                     return true;

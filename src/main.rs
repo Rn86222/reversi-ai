@@ -147,7 +147,7 @@ fn main() {
                 } else {
                     pos = nega_scout_transpose_pos(
                         &board,
-                        8,
+                        10,
                         &mut transpose_table_upper,
                         &mut transpose_table_lower,
                         &mut former_transpose_table_upper,
