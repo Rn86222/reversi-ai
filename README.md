@@ -14,10 +14,11 @@ cargo run -debug [AI1] [AI2]
 ```sh
 cargo run -debug p s [AI]
 ```
-- s $\cdots プレイヤーが先手
+- `s` $\cdots$ プレイヤーが先手
+- `g` $\cdots$ プレイヤーが後手
 
 ## AIの名前
-- rn $\cdots$ random_pos
-- ab $\cdots$ alpha_beta_pos
-- na $\cdots$ nega_alpha_transpose_pos
-- ns $\cdots$ nega_scout_transpose_pos
+- `rn` $\cdots$ `random_pos`
+- `ab` $\cdots$ `alpha_beta_pos`
+- `na` $\cdots$ `nega_alpha_transpose_pos`
+- `ns` $\cdots$ `nega_scout_transpose_pos`
