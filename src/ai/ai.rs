@@ -324,8 +324,9 @@ fn nega_scout_transpose(
     if u < beta {
         beta = u;
     }
-    let legal_poss_vec = legal_poss(board);
-    if legal_poss_vec.len() == 0 {
+    // let legal_poss_vec = legal_poss(board);
+    let legal_poss = legal(*board);
+    if legal_poss == 0 {
         board.turn = !board.turn;
         board.no_legal_command += 1;
         let (count, score) = nega_scout_transpose(
@@ -341,12 +342,16 @@ fn nega_scout_transpose(
         return (count, -score);
     }
     let mut child_boards: Vec<Board> = Vec::new();
-    for i in 0..legal_poss_vec.len() {
+    for i in 0..64 {
+        let pos = legal_poss & (1 << i);
+        if pos == 0 {
+            continue;
+        }
         let mut child_board = *board;
-        child_board = execute_pos(&mut child_board, legal_poss_vec[i]);
+        child_board = execute_pos(&mut child_board, pos);
         child_boards.push(child_board);
     }
-    if legal_poss_vec.len() >= 2 {
+    if legal_poss.count_ones() >= 2 {
         child_boards = child_boards
             .iter()
             .map(|b: &Board| {
@@ -432,8 +437,8 @@ fn nega_scout(
     if u < beta {
         beta = u;
     }
-    let legal_poss_vec = legal_poss(board);
-    if legal_poss_vec.len() == 0 {
+    let legal_poss = legal(*board);
+    if legal_poss == 0 {
         board.turn = !board.turn;
         board.no_legal_command += 1;
         let (count, score) = nega_scout(
@@ -449,12 +454,16 @@ fn nega_scout(
         return (count, -score);
     }
     let mut child_boards: Vec<Board> = Vec::new();
-    for i in 0..legal_poss_vec.len() {
+    for i in 0..64 {
+        let pos = legal_poss & (1 << i);
+        if pos == 0 {
+            continue;
+        }
         let mut child_board = *board;
-        child_board = execute_pos(&mut child_board, legal_poss_vec[i]);
+        child_board = execute_pos(&mut child_board, pos);
         child_boards.push(child_board);
     }
-    if legal_poss_vec.len() >= 2 {
+    if legal_poss.count_ones() >= 2 {
         child_boards = child_boards
             .iter()
             .map(|b: &Board| {
@@ -549,28 +558,29 @@ fn nega_scout(
     (searched_nodes, best_score)
 }
 
-pub fn nega_scout_transpose_pos(
-    board: &Board,
-    depth: i32,
-    // transpose_table_upper: &mut HashMap<Board, i32>,s
-) -> u64 {
+pub fn nega_scout_transpose_pos(board: &Board, depth: i32) -> u64 {
     let start_time = Instant::now();
     let mut transpose_table_upper: HashMap<Board, i32> = HashMap::new();
     let mut former_transpose_table_upper: HashMap<Board, i32> = HashMap::new();
     let mut transpose_table_lower: HashMap<Board, i32> = HashMap::new();
     let mut former_transpose_table_lower: HashMap<Board, i32> = HashMap::new();
-    let legal_poss_vec = legal_poss(board);
-    if legal_poss_vec.len() == 0 {
+    let legal_poss = legal(*board);
+    if legal_poss == 0 {
         return 0;
     }
     let mut child_boards: Vec<Board> = Vec::new();
-    for i in 0..legal_poss_vec.len() {
+    let mut best_pos = 0;
+    for i in 0..64 {
+        let pos = legal_poss & (1 << i);
+        if pos == 0 {
+            continue;
+        }
+        best_pos = pos;
         let mut child_board = *board;
-        child_board = execute_pos(&mut child_board, legal_poss_vec[i]);
-        child_board.before_pos = legal_poss_vec[i];
+        child_board = execute_pos(&mut child_board, pos);
+        child_board.before_pos = legal_poss & (1 << i);
         child_boards.push(child_board);
     }
-    let mut best_pos = legal_poss_vec[0];
     let start_depth = if 1 < depth - 3 { depth - 3 } else { 1 };
     let mut searched_nodes = 0;
     let mut best_score = 0;
@@ -581,7 +591,7 @@ pub fn nega_scout_transpose_pos(
         }
         let mut alpha = std::i32::MIN + 1;
         let beta = -alpha;
-        if legal_poss_vec.len() >= 2 {
+        if legal_poss.count_ones() >= 2 {
             child_boards = child_boards
                 .iter()
                 .map(|b: &Board| {

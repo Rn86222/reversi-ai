@@ -35,7 +35,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let argc = args.len();
 
-    let depth = 9;
+    let depth = 12;
 
     let mut client_state = CardWaiting;
 
@@ -115,7 +115,8 @@ fn main() {
                                     String::from("MOVE ") + &pos_to_cmd(&pos) + &String::from("\n");
                                 let request = request_string.as_bytes();
                                 stream.write_all(request).unwrap();
-                                board = execute_cmd(&mut board, pos_to_cmd(&pos));
+                                // board = execute_cmd(&mut board, pos_to_cmd(&pos));
+                                board = execute_pos(&mut board, pos);
                             }
                             client_state = AckWaiting;
                         }
@@ -165,7 +166,8 @@ fn main() {
                                             panic!();
                                         }
                                         if is_legal_pos(&board, &pos) {
-                                            board = execute_cmd(&mut board, pos_to_cmd(&pos));
+                                            // board = execute_cmd(&mut board, pos_to_cmd(&pos));
+                                            board = execute_pos(&mut board, pos);
                                         } else {
                                             println!("illegal command");
                                             panic!();
@@ -221,10 +223,10 @@ fn main() {
                     } else {
                         black_duration_sum += duration;
                         println!("{}", pos_to_cmd(&pos));
-                        board = execute_cmd(&mut board, pos_to_cmd(&pos));
+                        board = execute_pos(&mut board, pos);
                     }
                 } else {
-                    let (pos, duration) = ai_pos(&mut board, 10, args[3].clone());
+                    let (pos, duration) = ai_pos(&mut board, 12, args[3].clone());
                     if pos == 0 {
                         board.no_legal_command += 1;
                         println!("no legal command, skip");
@@ -232,7 +234,7 @@ fn main() {
                     } else {
                         white_duration_sum += duration;
                         println!("{}", pos_to_cmd(&pos));
-                        board = execute_cmd(&mut board, pos_to_cmd(&pos));
+                        board = execute_pos(&mut board, pos);
                     }
                 }
                 print_board(&board);
@@ -271,7 +273,7 @@ fn main() {
                             } else {
                                 white_duration_sum += duration;
                             }
-                            board = execute_cmd(&mut board, pos_to_cmd(&pos));
+                            board = execute_pos(&mut board, pos);
                         } else {
                             println!("illegal command");
                             continue;
@@ -290,7 +292,7 @@ fn main() {
                             black_duration_sum += duration;
                         }
                         println!("{}", pos_to_cmd(&pos));
-                        board = execute_cmd(&mut board, pos_to_cmd(&pos));
+                        board = execute_pos(&mut board, pos);
                     }
                 }
                 print_board(&board);
