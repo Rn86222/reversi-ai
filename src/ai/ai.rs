@@ -3,6 +3,8 @@ use crate::util::util::*;
 use rand::seq::SliceRandom;
 use rand::{rngs::ThreadRng, Rng};
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 use std::option::Option;
 use std::time::Duration;
 use std::time::Instant;
@@ -132,7 +134,7 @@ pub fn alpha_beta_pos(board: &Board, depth: i32) -> u64 {
         count_sum += count;
         score = -score;
         if score >= MAX_SCORE {
-            println!("complete");
+            println!("Complete");
             return legal_poss_vec[i];
         }
         if score > alpha {
@@ -253,7 +255,7 @@ pub fn nega_alpha_transpose_pos(board: &Board, depth: i32) -> u64 {
             score = -score;
             searched_nodes += count;
             if score >= MAX_SCORE {
-                println!("complete");
+                println!("Complete");
                 return child.before_pos;
             }
             if score > alpha {
@@ -558,7 +560,7 @@ fn nega_scout(
     (searched_nodes, best_score)
 }
 
-pub fn nega_scout_transpose_pos(board: &Board, depth: i32) -> u64 {
+pub fn nega_scout_transpose_pos(board: &Board, depth: i32, millis: u64) -> u64 {
     let start_time = Instant::now();
     let mut transpose_table_upper: HashMap<Board, i32> = HashMap::new();
     let mut former_transpose_table_upper: HashMap<Board, i32> = HashMap::new();
@@ -585,7 +587,7 @@ pub fn nega_scout_transpose_pos(board: &Board, depth: i32) -> u64 {
     let mut searched_nodes = 0;
     let mut best_score = 0;
     for search_depth in start_depth..=depth {
-        if start_time.elapsed() >= Duration::from_millis(800) {
+        if start_time.elapsed() >= Duration::from_millis(millis) {
             println!("score: {}", best_score);
             return best_pos;
         }
@@ -622,7 +624,7 @@ pub fn nega_scout_transpose_pos(board: &Board, depth: i32) -> u64 {
         alpha = score;
         best_pos = child_boards[0].before_pos;
         if score >= MAX_SCORE {
-            println!("complete");
+            println!("Complete");
             return best_pos;
         }
 
@@ -640,7 +642,7 @@ pub fn nega_scout_transpose_pos(board: &Board, depth: i32) -> u64 {
             score = -score;
             searched_nodes += count;
             if score >= MAX_SCORE {
-                println!("complete");
+                println!("Complete");
                 return child.before_pos;
             }
             if score > alpha {
@@ -679,17 +681,92 @@ pub fn nega_scout_transpose_pos(board: &Board, depth: i32) -> u64 {
     best_pos
 }
 
-pub fn ai_pos(board: &mut Board, depth: i32, ai_name: String) -> (u64, Duration) {
+pub fn create_book(path: &str, book: &mut HashMap<Board, u64>) {
+    if let Ok(file) = File::open(path) {
+        let reader = BufReader::new(file);
+
+        for line in reader.lines() {
+            let line_content = line.unwrap();
+            let len = line_content.len();
+            let mut board: Board = Board {
+                black_board: 0,
+                white_board: 0,
+                turn: BLACK,
+                no_legal_command: 0,
+                value: 0,
+                before_pos: 0,
+            };
+
+            init_board(&mut board);
+            for i in 0..(len / 2 - 1) {
+                board = execute_cmd(&mut board, line_content[(2 * i)..=(2 * i + 1)].to_string());
+            }
+            book.insert(
+                board,
+                cmd_to_pos(line_content[(len - 2)..=(len - 1)].to_string()),
+            );
+
+            init_board(&mut board);
+            for i in 0..(len / 2 - 1) {
+                let mut pos = cmd_to_pos(line_content[(2 * i)..=(2 * i + 1)].to_string());
+                pos = rotate180_pos(pos);
+                board = execute_pos(&mut board, pos);
+            }
+            book.insert(
+                board,
+                rotate180_pos(cmd_to_pos(line_content[(len - 2)..=(len - 1)].to_string())),
+            );
+
+            init_board(&mut board);
+            for i in 0..(len / 2 - 1) {
+                let mut pos = cmd_to_pos(line_content[(2 * i)..=(2 * i + 1)].to_string());
+                pos = flip_diagonal_pos(pos);
+                board = execute_pos(&mut board, pos);
+            }
+            book.insert(
+                board,
+                flip_diagonal_pos(cmd_to_pos(line_content[(len - 2)..=(len - 1)].to_string())),
+            );
+
+            init_board(&mut board);
+            for i in 0..(len / 2 - 1) {
+                let mut pos = cmd_to_pos(line_content[(2 * i)..=(2 * i + 1)].to_string());
+                pos = rotate180_pos(flip_diagonal_pos(pos));
+                board = execute_pos(&mut board, pos);
+            }
+            book.insert(
+                board,
+                rotate180_pos(flip_diagonal_pos(cmd_to_pos(
+                    line_content[(len - 2)..=(len - 1)].to_string(),
+                ))),
+            );
+        }
+    } else {
+        println!("Failed in opening file.");
+    }
+}
+
+pub fn ai_pos(
+    board: &mut Board,
+    depth: i32,
+    ai_name: String,
+    book: &HashMap<Board, u64>,
+) -> (u64, Duration) {
     let pos;
     let start_time = Instant::now();
+    let count: i32 = (board.black_board.count_ones() + board.white_board.count_ones()) as i32;
     if ai_name == "rn" {
         pos = random_pos(&board);
     } else if ai_name == "ab" {
-        pos = alpha_beta_pos(&board, depth);
+        pos = alpha_beta_pos(&board, 8);
     } else if ai_name == "na" {
         pos = nega_alpha_transpose_pos(&board, depth);
+    } else if let Some(pos_ref) = book.get(board) {
+        pos = *pos_ref;
+    } else if count >= 48 {
+        pos = nega_scout_transpose_pos(&board, 65 - count, 10000);
     } else {
-        pos = nega_scout_transpose_pos(&board, depth);
+        pos = nega_scout_transpose_pos(&board, depth, 800);
     }
     let duration = start_time.elapsed();
     println!("Thinking time: {:.2?}", duration);

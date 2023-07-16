@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::env;
 use std::io;
 use std::net::SocketAddr;
@@ -25,6 +26,9 @@ fn main() {
         value: 0,
         before_pos: 0,
     };
+
+    let mut book: HashMap<Board, u64> = HashMap::new();
+    create_book("book.txt", &mut book);
 
     init_board(&mut board);
     print_board(&board);
@@ -99,7 +103,7 @@ fn main() {
                             }
                         }
                         MyTurn => {
-                            let (pos, _) = ai_pos(&mut board, depth, String::from("ns"));
+                            let (pos, _) = ai_pos(&mut board, depth, String::from("ns"), &book);
                             if pos == 0 {
                                 println!("No legal command");
                                 board.no_legal_command += 1;
@@ -115,7 +119,6 @@ fn main() {
                                     String::from("MOVE ") + &pos_to_cmd(&pos) + &String::from("\n");
                                 let request = request_string.as_bytes();
                                 stream.write_all(request).unwrap();
-                                // board = execute_cmd(&mut board, pos_to_cmd(&pos));
                                 board = execute_pos(&mut board, pos);
                             }
                             client_state = AckWaiting;
@@ -166,10 +169,9 @@ fn main() {
                                             panic!();
                                         }
                                         if is_legal_pos(&board, &pos) {
-                                            // board = execute_cmd(&mut board, pos_to_cmd(&pos));
                                             board = execute_pos(&mut board, pos);
                                         } else {
-                                            println!("illegal command");
+                                            println!("Illegal command");
                                             panic!();
                                         }
                                     }
@@ -215,10 +217,10 @@ fn main() {
         if argc == 4 {
             while board_state(&board) == 0 {
                 if board.turn {
-                    let (pos, duration) = ai_pos(&mut board, depth, args[2].clone());
+                    let (pos, duration) = ai_pos(&mut board, depth, args[2].clone(), &book);
                     if pos == 0 {
                         board.no_legal_command += 1;
-                        println!("no legal command, skip");
+                        println!("No legal command, skip");
                         board.turn = !board.turn;
                     } else {
                         black_duration_sum += duration;
@@ -226,10 +228,10 @@ fn main() {
                         board = execute_pos(&mut board, pos);
                     }
                 } else {
-                    let (pos, duration) = ai_pos(&mut board, 12, args[3].clone());
+                    let (pos, duration) = ai_pos(&mut board, 12, args[3].clone(), &book);
                     if pos == 0 {
                         board.no_legal_command += 1;
-                        println!("no legal command, skip");
+                        println!("No legal command, skip");
                         board.turn = !board.turn;
                     } else {
                         white_duration_sum += duration;
@@ -254,10 +256,10 @@ fn main() {
                     let start_time = Instant::now();
                     if legal_poss(&board).len() == 0 {
                         board.no_legal_command += 1;
-                        println!("no legal command, skip");
+                        println!("No legal command, skip");
                         board.turn = !board.turn;
                     } else {
-                        println!("wait command...");
+                        println!("Wait command...");
                         let mut input = String::new();
                         io::stdin()
                             .read_line(&mut input)
@@ -275,15 +277,15 @@ fn main() {
                             }
                             board = execute_pos(&mut board, pos);
                         } else {
-                            println!("illegal command");
+                            println!("Illegal command");
                             continue;
                         }
                     }
                 } else {
-                    let (pos, duration) = ai_pos(&mut board, depth, args[4].clone());
+                    let (pos, duration) = ai_pos(&mut board, depth, args[4].clone(), &book);
                     if pos == 0 {
                         board.no_legal_command += 1;
-                        println!("no legal command, skip");
+                        println!("No legal command, skip");
                         board.turn = !board.turn;
                     } else {
                         if player_turn {
@@ -310,7 +312,7 @@ fn main() {
         } else if board_state(&board) == 2 {
             println!("{} win!", WHITE_STONE);
         } else {
-            println!("draw");
+            println!("Tie");
         }
         println!(
             "Usage time  {}: {:.2?}  {}: {:.2?}",

@@ -1,4 +1,4 @@
-// use crate::util::util::*;
+use crate::util::util::*;
 use std::hash::{Hash, Hasher};
 pub const BLACK: bool = true;
 pub const WHITE: bool = false;
@@ -158,6 +158,27 @@ const fn reverse(board: Board, pos: u64) -> u64 {
     result
 }
 
+#[inline]
+pub const fn rotate180_pos(pos: u64) -> u64 {
+    pos.reverse_bits()
+}
+
+#[inline]
+pub const fn flip_diagonal_pos(pos: u64) -> u64 {
+    macro_rules! calc {
+        ($r:ident, $m:expr, $n:expr) => {
+            let mask = $m & ($r ^ ($r << $n));
+            $r ^= mask ^ (mask >> $n);
+        };
+    }
+
+    let mut result = pos;
+    calc!(result, 0x0f0f0f0f00000000, 28);
+    calc!(result, 0x3333000033330000, 14);
+    calc!(result, 0x5500550055005500, 07);
+    result
+}
+
 pub fn init_board(board: &mut Board) {
     board.black_board = 1 << 28 | 1 << 35;
     board.white_board = 1 << 27 | 1 << 36;
@@ -244,13 +265,13 @@ fn flip(board: &mut Board, pos: &u64) -> Board {
     new_board
 }
 
-// pub fn execute_cmd(board: &mut Board, cmd: String) -> Board {
-//     execute_pos(board, cmd_to_pos(cmd))
-// }
+pub fn execute_cmd(board: &mut Board, cmd: String) -> Board {
+    execute_pos(board, cmd_to_pos(cmd))
+}
 
 pub fn execute_pos(board: &mut Board, pos: u64) -> Board {
     if pos == 0 || !is_legal_pos(board, &pos) {
-        println!("{} illegal cmd", pos);
+        println!("{}: illegal command", pos_to_cmd(&pos));
         return *board;
     }
     if board.turn {

@@ -2,17 +2,17 @@
 
 ## クライアントとして動かす
 ```sh
-cargo run -h "localhost" -p 3000 -n Player1
+cargo run -- -h "localhost" -p 3000 -n Player1
 ```
 
 ## AI同士で対戦
 ```sh
-cargo run -debug [AI1] [AI2]
+cargo run -- -debug [AI1] [AI2]
 ```
 
 ## プレイヤーがAIと対戦
 ```sh
-cargo run -debug p s [AI]
+cargo run -- -debug p s [AI]
 ```
 - `s` $\cdots$ プレイヤーが先手
 - `g` $\cdots$ プレイヤーが後手

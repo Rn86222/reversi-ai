@@ -22,7 +22,6 @@ pub fn cmd_to_pos(cmd: String) -> u64 {
         println!("too short command");
         return 0;
     }
-    // println!("{}", pos_to_cmd(&pos));
     pos
 }
 
