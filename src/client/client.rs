@@ -2,7 +2,7 @@ pub enum Command {
     Open(String),
     Start(String, String, String),
     Move(String),
-    Ack(u32),
+    Ack(u64),
     End(String, u32, u32, String),
     Bye(String),
 }
@@ -29,7 +29,7 @@ pub fn mes_to_command(mes: &String) -> Command {
         Move(parsed_mes[1].to_string())
     } else if parsed_mes[0] == String::from("ACK") {
         assert_eq!(length, 2);
-        let time: u32 = parsed_mes[1].parse().unwrap();
+        let time: u64 = parsed_mes[1].parse().unwrap();
         Ack(time)
     } else if parsed_mes[0] == String::from("END") {
         assert_eq!(length, 5);

@@ -16,8 +16,8 @@ fn evaluate_board(board: &Board) -> i32 {
     let mut white_score: u32 = 0;
 
     // count
-    black_score += board.black_board.count_ones();
-    white_score += board.white_board.count_ones();
+    // black_score += board.black_board.count_ones();
+    // white_score += board.white_board.count_ones();
 
     // corner
     let corner_score = 20;
@@ -30,9 +30,9 @@ fn evaluate_board(board: &Board) -> i32 {
     white_score += (board.white_board & WALL_BIT).count_ones() * wall_score;
 
     if board.turn {
-        black_score as i32 - white_score as i32
+        black_score as i32 - white_score as i32 + (board.black_board.count_ones() * 5) as i32
     } else {
-        white_score as i32 - black_score as i32
+        white_score as i32 - black_score as i32 + (board.white_board.count_ones() * 5) as i32
     }
 }
 
@@ -326,8 +326,8 @@ fn nega_scout_transpose(
     if u < beta {
         beta = u;
     }
-    // let legal_poss_vec = legal_poss(board);
-    let legal_poss = legal(*board);
+    let mut legal_poss = legal(*board);
+    let legal_poss_num = legal_poss.count_ones();
     if legal_poss == 0 {
         board.turn = !board.turn;
         board.no_legal_command += 1;
@@ -344,16 +344,16 @@ fn nega_scout_transpose(
         return (count, -score);
     }
     let mut child_boards: Vec<Board> = Vec::new();
-    for i in 0..64 {
-        let pos = legal_poss & (1 << i);
-        if pos == 0 {
-            continue;
-        }
+    for _ in 0..legal_poss_num {
+        let current_pos = msb(legal_poss);
+
         let mut child_board = *board;
-        child_board = execute_pos(&mut child_board, pos);
+        child_board = execute_pos(&mut child_board, current_pos);
         child_boards.push(child_board);
+
+        legal_poss &= !current_pos;
     }
-    if legal_poss.count_ones() >= 2 {
+    if legal_poss_num >= 2 {
         child_boards = child_boards
             .iter()
             .map(|b: &Board| {
@@ -439,7 +439,8 @@ fn nega_scout(
     if u < beta {
         beta = u;
     }
-    let legal_poss = legal(*board);
+    let mut legal_poss = legal(*board);
+    let legal_poss_num = legal_poss.count_ones();
     if legal_poss == 0 {
         board.turn = !board.turn;
         board.no_legal_command += 1;
@@ -456,16 +457,25 @@ fn nega_scout(
         return (count, -score);
     }
     let mut child_boards: Vec<Board> = Vec::new();
-    for i in 0..64 {
-        let pos = legal_poss & (1 << i);
-        if pos == 0 {
-            continue;
-        }
+    for _ in 0..legal_poss_num {
+        let current_pos = msb(legal_poss);
+
         let mut child_board = *board;
-        child_board = execute_pos(&mut child_board, pos);
+        child_board = execute_pos(&mut child_board, current_pos);
         child_boards.push(child_board);
+
+        legal_poss &= !current_pos;
     }
-    if legal_poss.count_ones() >= 2 {
+    // for i in 0..64 {
+    //     let pos = legal_poss & (1 << i);
+    //     if pos == 0 {
+    //         continue;
+    //     }
+    //     let mut child_board = *board;
+    //     child_board = execute_pos(&mut child_board, pos);
+    //     child_boards.push(child_board);
+    // }
+    if legal_poss_num >= 2 {
         child_boards = child_boards
             .iter()
             .map(|b: &Board| {
@@ -566,23 +576,35 @@ pub fn nega_scout_transpose_pos(board: &Board, depth: i32, millis: u64) -> u64 {
     let mut former_transpose_table_upper: HashMap<Board, i32> = HashMap::new();
     let mut transpose_table_lower: HashMap<Board, i32> = HashMap::new();
     let mut former_transpose_table_lower: HashMap<Board, i32> = HashMap::new();
-    let legal_poss = legal(*board);
+    let mut legal_poss = legal(*board);
+    let legal_poss_num = legal_poss.count_ones();
     if legal_poss == 0 {
         return 0;
     }
     let mut child_boards: Vec<Board> = Vec::new();
     let mut best_pos = 0;
-    for i in 0..64 {
-        let pos = legal_poss & (1 << i);
-        if pos == 0 {
-            continue;
-        }
-        best_pos = pos;
+    for _ in 0..legal_poss_num {
+        let current_pos = msb(legal_poss);
+
+        best_pos = current_pos;
         let mut child_board = *board;
-        child_board = execute_pos(&mut child_board, pos);
-        child_board.before_pos = legal_poss & (1 << i);
+        child_board = execute_pos(&mut child_board, current_pos);
+        child_board.before_pos = current_pos;
         child_boards.push(child_board);
+
+        legal_poss &= !current_pos;
     }
+    // for i in 0..64 {
+    //     let pos = legal_poss & (1 << i);
+    //     if pos == 0 {
+    //         continue;
+    //     }
+    //     best_pos = pos;
+    //     let mut child_board = *board;
+    //     child_board = execute_pos(&mut child_board, pos);
+    //     child_board.before_pos = legal_poss & (1 << i);
+    //     child_boards.push(child_board);
+    // }
     let start_depth = if 1 < depth - 3 { depth - 3 } else { 1 };
     let mut searched_nodes = 0;
     let mut best_score = 0;
@@ -593,7 +615,7 @@ pub fn nega_scout_transpose_pos(board: &Board, depth: i32, millis: u64) -> u64 {
         }
         let mut alpha = std::i32::MIN + 1;
         let beta = -alpha;
-        if legal_poss.count_ones() >= 2 {
+        if legal_poss_num >= 2 {
             child_boards = child_boards
                 .iter()
                 .map(|b: &Board| {
@@ -682,67 +704,72 @@ pub fn nega_scout_transpose_pos(board: &Board, depth: i32, millis: u64) -> u64 {
 }
 
 pub fn create_book(path: &str, book: &mut HashMap<Board, u64>) {
-    if let Ok(file) = File::open(path) {
-        let reader = BufReader::new(file);
-
-        for line in reader.lines() {
-            let line_content = line.unwrap();
-            let len = line_content.len();
-            let mut board: Board = Board {
-                black_board: 0,
-                white_board: 0,
-                turn: BLACK,
-                no_legal_command: 0,
-                value: 0,
-                before_pos: 0,
-            };
-
-            init_board(&mut board);
-            for i in 0..(len / 2 - 1) {
-                board = execute_cmd(&mut board, line_content[(2 * i)..=(2 * i + 1)].to_string());
-            }
-            book.insert(
-                board,
-                cmd_to_pos(line_content[(len - 2)..=(len - 1)].to_string()),
-            );
-
-            init_board(&mut board);
-            for i in 0..(len / 2 - 1) {
-                let mut pos = cmd_to_pos(line_content[(2 * i)..=(2 * i + 1)].to_string());
-                pos = rotate180_pos(pos);
-                board = execute_pos(&mut board, pos);
-            }
-            book.insert(
-                board,
-                rotate180_pos(cmd_to_pos(line_content[(len - 2)..=(len - 1)].to_string())),
-            );
-
-            init_board(&mut board);
-            for i in 0..(len / 2 - 1) {
-                let mut pos = cmd_to_pos(line_content[(2 * i)..=(2 * i + 1)].to_string());
-                pos = flip_diagonal_pos(pos);
-                board = execute_pos(&mut board, pos);
-            }
-            book.insert(
-                board,
-                flip_diagonal_pos(cmd_to_pos(line_content[(len - 2)..=(len - 1)].to_string())),
-            );
-
-            init_board(&mut board);
-            for i in 0..(len / 2 - 1) {
-                let mut pos = cmd_to_pos(line_content[(2 * i)..=(2 * i + 1)].to_string());
-                pos = rotate180_pos(flip_diagonal_pos(pos));
-                board = execute_pos(&mut board, pos);
-            }
-            book.insert(
-                board,
-                rotate180_pos(flip_diagonal_pos(cmd_to_pos(
-                    line_content[(len - 2)..=(len - 1)].to_string(),
-                ))),
-            );
+    match File::open(path) {
+        Err(e) => {
+            println!("Failed in opening file ({}).", e);
         }
-    } else {
-        println!("Failed in opening file.");
+        Ok(file) => {
+            println!("Success in opening file.");
+            let reader = BufReader::new(file);
+
+            for line in reader.lines() {
+                let line_content = line.unwrap();
+                let len = line_content.len();
+                let mut board: Board = Board {
+                    black_board: 0,
+                    white_board: 0,
+                    turn: BLACK,
+                    no_legal_command: 0,
+                    value: 0,
+                    before_pos: 0,
+                };
+
+                init_board(&mut board);
+                for i in 0..(len / 2 - 1) {
+                    board =
+                        execute_cmd(&mut board, line_content[(2 * i)..=(2 * i + 1)].to_string());
+                }
+                book.insert(
+                    board,
+                    cmd_to_pos(line_content[(len - 2)..=(len - 1)].to_string()),
+                );
+
+                init_board(&mut board);
+                for i in 0..(len / 2 - 1) {
+                    let mut pos = cmd_to_pos(line_content[(2 * i)..=(2 * i + 1)].to_string());
+                    pos = rotate180_pos(pos);
+                    board = execute_pos(&mut board, pos);
+                }
+                book.insert(
+                    board,
+                    rotate180_pos(cmd_to_pos(line_content[(len - 2)..=(len - 1)].to_string())),
+                );
+
+                init_board(&mut board);
+                for i in 0..(len / 2 - 1) {
+                    let mut pos = cmd_to_pos(line_content[(2 * i)..=(2 * i + 1)].to_string());
+                    pos = flip_diagonal_pos(pos);
+                    board = execute_pos(&mut board, pos);
+                }
+                book.insert(
+                    board,
+                    flip_diagonal_pos(cmd_to_pos(line_content[(len - 2)..=(len - 1)].to_string())),
+                );
+
+                init_board(&mut board);
+                for i in 0..(len / 2 - 1) {
+                    let mut pos = cmd_to_pos(line_content[(2 * i)..=(2 * i + 1)].to_string());
+                    pos = rotate180_pos(flip_diagonal_pos(pos));
+                    board = execute_pos(&mut board, pos);
+                }
+                book.insert(
+                    board,
+                    rotate180_pos(flip_diagonal_pos(cmd_to_pos(
+                        line_content[(len - 2)..=(len - 1)].to_string(),
+                    ))),
+                );
+            }
+        }
     }
 }
 
@@ -751,10 +778,18 @@ pub fn ai_pos(
     depth: i32,
     ai_name: String,
     book: &HashMap<Board, u64>,
+    remaining_time: u64,
 ) -> (u64, Duration) {
     let pos;
     let start_time = Instant::now();
     let count: i32 = (board.black_board.count_ones() + board.white_board.count_ones()) as i32;
+    let thinking_time;
+    if count <= 20 {
+        thinking_time = (remaining_time / (64 - count as u64)) / 8;
+    } else {
+        thinking_time = remaining_time / ((64 - count as u64) / 2 + 1);
+    }
+    println!("Let's think {}ms", thinking_time);
     if ai_name == "rn" {
         pos = random_pos(&board);
     } else if ai_name == "ab" {
@@ -763,10 +798,10 @@ pub fn ai_pos(
         pos = nega_alpha_transpose_pos(&board, depth);
     } else if let Some(pos_ref) = book.get(board) {
         pos = *pos_ref;
-    } else if count >= 48 {
-        pos = nega_scout_transpose_pos(&board, 65 - count, 10000);
+    } else if count >= 47 {
+        pos = nega_scout_transpose_pos(&board, 65 - count, remaining_time / 5);
     } else {
-        pos = nega_scout_transpose_pos(&board, depth, 800);
+        pos = nega_scout_transpose_pos(&board, depth, thinking_time);
     }
     let duration = start_time.elapsed();
     println!("Thinking time: {:.2?}", duration);

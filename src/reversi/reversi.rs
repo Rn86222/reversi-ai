@@ -285,6 +285,19 @@ pub fn execute_pos(board: &mut Board, pos: u64) -> Board {
     new_board
 }
 
+#[inline]
+pub fn msb(pos: u64) -> u64 {
+    let mut current_pos = pos;
+    current_pos |= current_pos >> 1;
+    current_pos |= current_pos >> 2;
+    current_pos |= current_pos >> 4;
+    current_pos |= current_pos >> 8;
+    current_pos |= current_pos >> 16;
+    current_pos |= current_pos >> 32;
+    current_pos &= !(current_pos >> 1);
+    current_pos
+}
+
 // fn is_my_stone(board: &Board, pos: &u64) -> bool {
 //     let turn = board.turn;
 //     let my_board = if turn {

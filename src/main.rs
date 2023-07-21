@@ -28,7 +28,6 @@ fn main() {
     };
 
     let mut book: HashMap<Board, u64> = HashMap::new();
-    create_book("book.txt", &mut book);
 
     init_board(&mut board);
     print_board(&board);
@@ -40,6 +39,7 @@ fn main() {
     let argc = args.len();
 
     let depth = 12;
+    let mut remaining_time: u64 = 60000;
 
     let mut client_state = CardWaiting;
 
@@ -103,7 +103,17 @@ fn main() {
                             }
                         }
                         MyTurn => {
-                            let (pos, _) = ai_pos(&mut board, depth, String::from("ns"), &book);
+                            if book.is_empty() {
+                                println!("Book is created.");
+                                create_book("book.txt", &mut book);
+                            }
+                            let (pos, _) = ai_pos(
+                                &mut board,
+                                depth,
+                                String::from("ns"),
+                                &book,
+                                remaining_time,
+                            );
                             if pos == 0 {
                                 println!("No legal command");
                                 board.no_legal_command += 1;
@@ -130,6 +140,7 @@ fn main() {
 
                             match mes_to_command(&received_mes) {
                                 Ack(time) => {
+                                    remaining_time = time;
                                     println!("Remaining time: {}", time);
                                     client_state = OpponentTurn;
                                 }
@@ -217,7 +228,8 @@ fn main() {
         if argc == 4 {
             while board_state(&board) == 0 {
                 if board.turn {
-                    let (pos, duration) = ai_pos(&mut board, depth, args[2].clone(), &book);
+                    let (pos, duration) =
+                        ai_pos(&mut board, depth, args[2].clone(), &book, remaining_time);
                     if pos == 0 {
                         board.no_legal_command += 1;
                         println!("No legal command, skip");
@@ -228,7 +240,8 @@ fn main() {
                         board = execute_pos(&mut board, pos);
                     }
                 } else {
-                    let (pos, duration) = ai_pos(&mut board, 12, args[3].clone(), &book);
+                    let (pos, duration) =
+                        ai_pos(&mut board, 12, args[3].clone(), &book, remaining_time);
                     if pos == 0 {
                         board.no_legal_command += 1;
                         println!("No legal command, skip");
@@ -282,7 +295,8 @@ fn main() {
                         }
                     }
                 } else {
-                    let (pos, duration) = ai_pos(&mut board, depth, args[4].clone(), &book);
+                    let (pos, duration) =
+                        ai_pos(&mut board, depth, args[4].clone(), &book, remaining_time);
                     if pos == 0 {
                         board.no_legal_command += 1;
                         println!("No legal command, skip");
