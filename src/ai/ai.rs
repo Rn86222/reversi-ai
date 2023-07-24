@@ -16,11 +16,15 @@ fn evaluate_board(board: &Board) -> i32 {
     let mut white_score: u32 = 0;
 
     // count
-    // black_score += board.black_board.count_ones();
-    // white_score += board.white_board.count_ones();
+    let count = board.black_board.count_ones() + board.white_board.count_ones();
 
     // corner
-    let corner_score = 20;
+    let corner_score;
+    if count <= 48 {
+        corner_score = 20;
+    } else {
+        corner_score = 10;
+    }
     black_score += (board.black_board & CORNER_BIT).count_ones() * corner_score;
     white_score += (board.white_board & CORNER_BIT).count_ones() * corner_score;
 
@@ -29,10 +33,17 @@ fn evaluate_board(board: &Board) -> i32 {
     black_score += (board.black_board & WALL_BIT).count_ones() * wall_score;
     white_score += (board.white_board & WALL_BIT).count_ones() * wall_score;
 
-    if board.turn {
-        black_score as i32 - white_score as i32 + (board.black_board.count_ones() * 5) as i32
+    let legal_score;
+    if count <= 48 {
+        legal_score = 5;
     } else {
-        white_score as i32 - black_score as i32 + (board.white_board.count_ones() * 5) as i32
+        legal_score = 10;
+    }
+
+    if board.turn {
+        black_score as i32 - white_score as i32 + (legal(*board).count_ones() * legal_score) as i32
+    } else {
+        white_score as i32 - black_score as i32 + (legal(*board).count_ones() * legal_score) as i32
     }
 }
 
