@@ -301,7 +301,9 @@ fn nega_scout_transpose(
     transpose_table_lower: &mut HashMap<Board, i32>,
     former_transpose_table_upper: &mut HashMap<Board, i32>,
     former_transpose_table_lower: &mut HashMap<Board, i32>,
+    remaining_time: Duration,
 ) -> (i32, i32) {
+    let start_time = Instant::now();
     if let Some((count, score)) = check_end_score(board) {
         return (count, score);
     } else if depth <= 0 {
@@ -340,6 +342,7 @@ fn nega_scout_transpose(
             transpose_table_lower,
             former_transpose_table_upper,
             former_transpose_table_lower,
+            remaining_time,
         );
         return (count, -score);
     }
@@ -371,6 +374,9 @@ fn nega_scout_transpose(
     let mut searched_nodes = 0;
     let mut best_score = std::i32::MIN + 1;
     for mut child in child_boards {
+        if start_time.elapsed() >= remaining_time {
+            return (searched_nodes, best_score);
+        }
         let (count, mut score) = nega_scout_transpose(
             &mut child,
             depth - 1,
@@ -380,6 +386,7 @@ fn nega_scout_transpose(
             transpose_table_lower,
             former_transpose_table_upper,
             former_transpose_table_lower,
+            Duration::from_micros(100) + remaining_time - start_time.elapsed(),
         );
         score = -score;
         searched_nodes += count;
@@ -414,7 +421,9 @@ fn nega_scout(
     transpose_table_lower: &mut HashMap<Board, i32>,
     former_transpose_table_upper: &mut HashMap<Board, i32>,
     former_transpose_table_lower: &mut HashMap<Board, i32>,
+    remaining_time: Duration,
 ) -> (i32, i32) {
+    let start_time = Instant::now();
     if let Some((count, score)) = check_end_score(board) {
         return (count, score);
     } else if depth <= 0 {
@@ -453,6 +462,7 @@ fn nega_scout(
             transpose_table_lower,
             former_transpose_table_upper,
             former_transpose_table_lower,
+            remaining_time,
         );
         return (count, -score);
     }
@@ -466,15 +476,6 @@ fn nega_scout(
 
         legal_poss &= !current_pos;
     }
-    // for i in 0..64 {
-    //     let pos = legal_poss & (1 << i);
-    //     if pos == 0 {
-    //         continue;
-    //     }
-    //     let mut child_board = *board;
-    //     child_board = execute_pos(&mut child_board, pos);
-    //     child_boards.push(child_board);
-    // }
     if legal_poss_num >= 2 {
         child_boards = child_boards
             .iter()
@@ -500,6 +501,7 @@ fn nega_scout(
         transpose_table_lower,
         former_transpose_table_upper,
         former_transpose_table_lower,
+        remaining_time,
     );
     score = -score;
     searched_nodes += count;
@@ -515,6 +517,9 @@ fn nega_scout(
     let mut best_score = score;
 
     for mut child in &mut child_boards[1..] {
+        if start_time.elapsed() >= remaining_time {
+            return (searched_nodes, best_score);
+        }
         let (count, mut score) = nega_scout_transpose(
             &mut child,
             depth - 1,
@@ -524,6 +529,7 @@ fn nega_scout(
             transpose_table_lower,
             former_transpose_table_upper,
             former_transpose_table_lower,
+            Duration::from_micros(100) + remaining_time - start_time.elapsed(),
         );
         score = -score;
         searched_nodes += count;
@@ -535,6 +541,9 @@ fn nega_scout(
         }
         if score > alpha {
             alpha = score;
+            if start_time.elapsed() >= remaining_time {
+                return (searched_nodes, best_score);
+            }
             let (count, mut score) = nega_scout(
                 child,
                 depth - 1,
@@ -544,6 +553,7 @@ fn nega_scout(
                 transpose_table_lower,
                 former_transpose_table_upper,
                 former_transpose_table_lower,
+                Duration::from_micros(100) + remaining_time - start_time.elapsed(),
             );
             score = -score;
             searched_nodes += count;
@@ -570,7 +580,7 @@ fn nega_scout(
     (searched_nodes, best_score)
 }
 
-pub fn nega_scout_transpose_pos(board: &Board, depth: i32, millis: u64) -> u64 {
+pub fn nega_scout_transpose_pos(board: &Board, depth: i32, thinking_time: Duration) -> u64 {
     let start_time = Instant::now();
     let mut transpose_table_upper: HashMap<Board, i32> = HashMap::new();
     let mut former_transpose_table_upper: HashMap<Board, i32> = HashMap::new();
@@ -594,22 +604,11 @@ pub fn nega_scout_transpose_pos(board: &Board, depth: i32, millis: u64) -> u64 {
 
         legal_poss &= !current_pos;
     }
-    // for i in 0..64 {
-    //     let pos = legal_poss & (1 << i);
-    //     if pos == 0 {
-    //         continue;
-    //     }
-    //     best_pos = pos;
-    //     let mut child_board = *board;
-    //     child_board = execute_pos(&mut child_board, pos);
-    //     child_board.before_pos = legal_poss & (1 << i);
-    //     child_boards.push(child_board);
-    // }
     let start_depth = if 1 < depth - 3 { depth - 3 } else { 1 };
     let mut searched_nodes = 0;
     let mut best_score = 0;
     for search_depth in start_depth..=depth {
-        if start_time.elapsed() >= Duration::from_millis(millis) {
+        if start_time.elapsed() >= thinking_time {
             println!("score: {}", best_score);
             return best_pos;
         }
@@ -630,7 +629,10 @@ pub fn nega_scout_transpose_pos(board: &Board, depth: i32, millis: u64) -> u64 {
                 .collect();
             child_boards.sort_by(|a, b| b.value.cmp(&a.value));
         }
-
+        if start_time.elapsed() >= thinking_time {
+            println!("score: {}", best_score);
+            return best_pos;
+        }
         let (count, mut score) = nega_scout(
             &mut child_boards[0],
             search_depth - 1,
@@ -640,6 +642,7 @@ pub fn nega_scout_transpose_pos(board: &Board, depth: i32, millis: u64) -> u64 {
             &mut transpose_table_lower,
             &mut former_transpose_table_upper,
             &mut former_transpose_table_lower,
+            Duration::from_micros(100) + thinking_time - start_time.elapsed(),
         );
         score = -score;
         searched_nodes += count;
@@ -651,6 +654,15 @@ pub fn nega_scout_transpose_pos(board: &Board, depth: i32, millis: u64) -> u64 {
         }
 
         for mut child in &mut child_boards.clone()[1..] {
+            // println!(
+            //     "used time:  {:.2?}  thinking_time: {:.2?}",
+            //     start_time.elapsed(),
+            //     thinking_time
+            // );
+            if start_time.elapsed() >= thinking_time {
+                println!("score: {}", best_score);
+                return best_pos;
+            }
             let (count, mut score) = nega_scout_transpose(
                 &mut child,
                 search_depth - 1,
@@ -660,6 +672,7 @@ pub fn nega_scout_transpose_pos(board: &Board, depth: i32, millis: u64) -> u64 {
                 &mut transpose_table_lower,
                 &mut former_transpose_table_upper,
                 &mut former_transpose_table_lower,
+                Duration::from_micros(100) + thinking_time - start_time.elapsed(),
             );
             score = -score;
             searched_nodes += count;
@@ -671,6 +684,10 @@ pub fn nega_scout_transpose_pos(board: &Board, depth: i32, millis: u64) -> u64 {
                 best_pos = child.before_pos;
                 alpha = score;
                 best_score = alpha;
+                if start_time.elapsed() >= thinking_time {
+                    println!("score: {}", best_score);
+                    return best_pos;
+                }
                 (_, score) = nega_scout(
                     &mut child,
                     search_depth - 1,
@@ -680,6 +697,7 @@ pub fn nega_scout_transpose_pos(board: &Board, depth: i32, millis: u64) -> u64 {
                     &mut transpose_table_lower,
                     &mut former_transpose_table_upper,
                     &mut former_transpose_table_lower,
+                    Duration::from_micros(100) + thinking_time - start_time.elapsed(),
                 );
                 score = -score;
             }
@@ -789,7 +807,6 @@ pub fn ai_pos(
     } else {
         thinking_time = remaining_time / ((64 - count as u64) / 2 + 1);
     }
-    println!("Let's think {}ms", thinking_time);
     if ai_name == "rn" {
         pos = random_pos(&board);
     } else if ai_name == "ab" {
@@ -799,9 +816,15 @@ pub fn ai_pos(
     } else if let Some(pos_ref) = book.get(board) {
         pos = *pos_ref;
     } else if count >= 47 {
-        pos = nega_scout_transpose_pos(&board, 65 - count, remaining_time / 5);
+        println!(
+            "Let's think {:.2?}",
+            Duration::from_millis(thinking_time * 2)
+        );
+        pos =
+            nega_scout_transpose_pos(&board, 65 - count, Duration::from_millis(thinking_time * 2));
     } else {
-        pos = nega_scout_transpose_pos(&board, depth, thinking_time);
+        println!("Let's think {:.2?}", Duration::from_millis(thinking_time));
+        pos = nega_scout_transpose_pos(&board, depth, Duration::from_millis(thinking_time));
     }
     let duration = start_time.elapsed();
     println!("Thinking time: {:.2?}", duration);
