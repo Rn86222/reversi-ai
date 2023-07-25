@@ -5,10 +5,12 @@ use std::net::SocketAddr;
 use std::net::ToSocketAddrs;
 mod ai;
 mod client;
+mod learning;
 mod reversi;
 mod util;
 use ai::ai::*;
 use client::client::{ClientState::*, Command::*, *};
+use learning::learning::*;
 use reversi::reversi::*;
 use std::io::Write;
 use std::io::{BufRead, BufReader};
@@ -18,6 +20,15 @@ use std::time::Instant;
 use util::util::*;
 
 fn main() {
+    let args: Vec<String> = env::args().collect();
+    let argc = args.len();
+
+    if argc == 2 && args[1] == String::from("-train") {
+        println!("Training mode");
+        train(10, 0.001);
+        return;
+    }
+
     let mut board: Board = Board {
         black_board: 0,
         white_board: 0,
@@ -34,9 +45,6 @@ fn main() {
 
     let mut player_turn;
     let mut ai_turn;
-
-    let args: Vec<String> = env::args().collect();
-    let argc = args.len();
 
     let depth = 12;
     let mut remaining_time: u64 = 60000;
@@ -223,6 +231,7 @@ fn main() {
             }
         }
     } else {
+        println!("Debug mode");
         let mut black_duration_sum = Duration::from_secs(0);
         let mut white_duration_sum = Duration::from_secs(0);
         if argc == 4 {

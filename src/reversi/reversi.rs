@@ -269,6 +269,10 @@ pub fn execute_cmd(board: &mut Board, cmd: String) -> Board {
     execute_pos(board, cmd_to_pos(cmd))
 }
 
+pub fn execute_lower_cmd(board: &mut Board, cmd: String) -> Board {
+    execute_pos(board, lower_cmd_to_pos(cmd))
+}
+
 pub fn execute_pos(board: &mut Board, pos: u64) -> Board {
     if pos == 0 || !is_legal_pos(board, &pos) {
         println!("{}: illegal command", pos_to_cmd(&pos));
@@ -297,122 +301,3 @@ pub fn msb(pos: u64) -> u64 {
     current_pos &= !(current_pos >> 1);
     current_pos
 }
-
-// fn is_my_stone(board: &Board, pos: &u64) -> bool {
-//     let turn = board.turn;
-//     let my_board = if turn {
-//         board.black_board
-//     } else {
-//         board.white_board
-//     };
-//     my_board & *pos != 0
-// }
-
-// fn is_enemy_stone(board: &Board, pos: &u64) -> bool {
-//     let turn = board.turn;
-//     let enemy_board = if turn {
-//         board.white_board
-//     } else {
-//         board.black_board
-//     };
-//     enemy_board & *pos != 0
-// }
-
-// fn is_empty(board: &Board, pos: &u64) -> bool {
-//     !(is_my_stone(board, pos) || is_enemy_stone(board, pos))
-// }
-
-/*  if the new position is out of board, return 0 */
-// fn new_pos(pos: &u64, dir: &(i32, i32)) -> u64 {
-//     let (mut dx, mut dy) = *dir;
-//     let current_pos: u64;
-//     let pos_index = (*pos).trailing_zeros();
-//     let (x, y) = ((pos_index % 8) as i32, (pos_index / 8) as i32);
-//     if x + dx < 0 || CELL as i32 - 1 < x + dx || y + dy < 0 || CELL as i32 - 1 < y + dy {
-//         return 0;
-//     }
-//     if dx < 0 {
-//         if dy < 0 {
-//             (dx, dy) = (-dx, -dy);
-//             current_pos = (*pos >> dx) >> (CELL as i32 * dy);
-//         } else {
-//             dx = -dx;
-//             current_pos = (*pos >> dx) << (CELL as i32 * dy);
-//         }
-//     } else {
-//         if dy < 0 {
-//             dy = -dy;
-//             current_pos = (*pos << dx) >> (CELL as i32 * dy);
-//         } else {
-//             current_pos = (*pos << dx) << (CELL as i32 * dy);
-//         }
-//     }
-//     current_pos
-// }
-
-// pub fn is_legal_pos(board: &Board, pos: &u64) -> bool {
-//     if !is_empty(board, pos) {
-//         return false;
-//     }
-//     for dir in DIRECTIONS.iter() {
-//         let mut current_pos: u64 = *pos;
-//         'outer: loop {
-//             current_pos = new_pos(&current_pos, dir);
-//             if current_pos == 0 || is_my_stone(board, &current_pos) || is_empty(board, &current_pos)
-//             {
-//                 break;
-//             }
-//             loop {
-//                 current_pos = new_pos(&current_pos, dir);
-//                 if current_pos == 0 || is_empty(board, &current_pos) {
-//                     break 'outer;
-//                 }
-//                 if is_my_stone(board, &current_pos) {
-//                     return true;
-//                 }
-//             }
-//         }
-//     }
-//     false
-// }
-
-// fn flip(board: &mut Board, pos: &u64) -> Board {
-//     let turn = board.turn;
-//     let old_board = *board;
-//     let new_board = board;
-//     let (my_board, enemy_board) = if turn {
-//         (&mut new_board.black_board, &mut new_board.white_board)
-//     } else {
-//         (&mut new_board.white_board, &mut new_board.black_board)
-//     };
-//     for dir in DIRECTIONS.iter() {
-//         let mut current_pos: u64 = *pos;
-//         current_pos = new_pos(&current_pos, dir);
-//         if current_pos == 0
-//             || is_my_stone(&old_board, &current_pos)
-//             || is_empty(&old_board, &current_pos)
-//         {
-//             continue;
-//         }
-//         loop {
-//             current_pos = new_pos(&current_pos, dir);
-//             if current_pos == 0 || is_empty(&old_board, &current_pos) {
-//                 break;
-//             }
-//             if is_my_stone(&old_board, &current_pos) {
-//                 let (dx, dy) = *dir;
-//                 let back_dir = &(-dx, -dy);
-//                 loop {
-//                     current_pos = new_pos(&current_pos, back_dir);
-//                     if is_my_stone(&old_board, &current_pos) {
-//                         break;
-//                     }
-//                     *my_board |= current_pos;
-//                     *enemy_board &= !current_pos;
-//                 }
-//                 break;
-//             }
-//         }
-//     }
-//     *new_board
-// }

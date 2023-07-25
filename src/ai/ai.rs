@@ -615,7 +615,7 @@ pub fn nega_scout_transpose_pos(board: &Board, depth: i32, thinking_time: Durati
 
         legal_poss &= !current_pos;
     }
-    let start_depth = if 1 < depth - 3 { depth - 3 } else { 1 };
+    let start_depth = if 1 < depth - 6 { depth - 6 } else { 1 };
     let mut searched_nodes = 0;
     let mut best_score = 0;
     for search_depth in start_depth..=depth {
@@ -623,6 +623,7 @@ pub fn nega_scout_transpose_pos(board: &Board, depth: i32, thinking_time: Durati
             println!("score: {}", best_score);
             return best_pos;
         }
+        println!("{}", best_score);
         let mut alpha = std::i32::MIN + 1;
         let beta = -alpha;
         if legal_poss_num >= 2 {
