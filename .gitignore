@@ -1,3 +1,6 @@
 /target
 *.exe
 /self_play
+wthor*.txt
+/src/parameter
+train_result*.txt

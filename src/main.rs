@@ -8,9 +8,10 @@ mod client;
 mod learning;
 mod reversi;
 mod util;
-use ai::ai::*;
 use client::client::{ClientState::*, Command::*, *};
 use learning::learning::*;
+mod parameter;
+use ai::ai::*;
 use reversi::reversi::*;
 use std::io::Write;
 use std::io::{BufRead, BufReader};
@@ -25,7 +26,12 @@ fn main() {
 
     if argc == 2 && args[1] == String::from("-train") {
         println!("Training mode");
-        train(10, 0.001);
+        train(100, 0.0001);
+        return;
+    }
+    if argc == 2 && args[1] == String::from("-minitrain") {
+        println!("Mini training mode");
+        train_mini(300, 0.0001);
         return;
     }
 
@@ -39,6 +45,7 @@ fn main() {
     };
 
     let mut book: HashMap<Board, u64> = HashMap::new();
+    // create_book("book.txt", &mut book);
 
     init_board(&mut board);
     print_board(&board);

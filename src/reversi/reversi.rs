@@ -5,16 +5,6 @@ pub const WHITE: bool = false;
 pub const BLACK_STONE: &str = "\x1b[31mo\x1b[0m";
 pub const WHITE_STONE: &str = "\x1b[34mx\x1b[0m";
 pub const CELL: u32 = 8;
-// pub const DIRECTIONS: [(i32, i32); 8] = [
-//     (1, 0),
-//     (1, -1),
-//     (0, -1),
-//     (-1, -1),
-//     (-1, 0),
-//     (-1, 1),
-//     (0, 1),
-//     (1, 1),
-// ];
 pub const CORNER_BIT: u64 = 1 | 1 << 7 | 1 << 56 | 1 << 63;
 pub const WALL_BIT: u64 = 1 << 1
     // | 1 << 2
